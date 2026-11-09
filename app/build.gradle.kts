@@ -4,14 +4,12 @@ plugins {
 
 android {
     namespace = "io.github.pixelims"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "io.github.pixelims"
         minSdk = 31
-        targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        targetSdk = 37
     }
 
     buildTypes {

@@ -28,9 +28,22 @@ jobs:
         with:
           packages: 'platform-tools'
 
-      - name: Install Android 17 SDK
+      - 
+      - name: Install Android SDK packages
         run: |
-          sdkmanager "platforms;android-37" "build-tools;36.0.0"
+          sdkmanager --install \
+            "platform-tools" \
+            "platforms;android-37.0" \
+            "build-tools;37.0.0"
+
+      - name: Fix Android 37 SDK directory compatibility
+        run: |
+          if [ -d "$ANDROID_HOME/platforms/android-37.0" ] && \
+             [ ! -e "$ANDROID_HOME/platforms/android-37" ]; then
+            ln -s android-37.0 "$ANDROID_HOME/platforms/android-37"
+          fi
+
+          ls -la "$ANDROID_HOME/platforms"
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6

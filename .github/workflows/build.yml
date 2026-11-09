@@ -1,3 +1,4 @@
+
 name: Build PixelIMS APK
 
 on:
@@ -5,51 +6,47 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
-        
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v4
-      with:
-        packages: 'platform-tools'
-      
-    - name: Cache Gradle packages
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-        restore-keys: |
-          ${{ runner.os }}-gradle-
-          
-    - name: Install Gradle
-      run: |
-        wget https://services.gradle.org/distributions/gradle-8.9-bin.zip
-        unzip -q gradle-8.9-bin.zip
-        export PATH=$PATH:$PWD/gradle-8.9/bin
-        gradle --version
-        
-    - name: Build with Gradle
-      run: |
-        export PATH=$PATH:$PWD/gradle-8.9/bin
-        cd $GITHUB_WORKSPACE
-        gradle assembleRelease --stacktrace --no-daemon
-      
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: PixelIMS-release
-        path: app/build/outputs/apk/release/*.apk
-        if-no-files-found: error
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools'
+
+      - name: Install Android 17 SDK
+        run: |
+          sdkmanager "platforms;android-37" "build-tools;36.0.0"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '9.3.1'
+
+      - name: Check Gradle
+        run: gradle --version
+
+      - name: Build with Gradle
+        run: |
+          gradle clean assembleRelease --stacktrace --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: PixelIMS-Android-17
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error

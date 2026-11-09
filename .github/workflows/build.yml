@@ -1,9 +1,16 @@
 
-name: Build PixelIMS APK
+name: Build PixelIMS Android 17
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+      - fix/android-17-stability
+
+  pull_request:
+    branches:
+      - main
+
   workflow_dispatch:
 
 permissions:
@@ -11,13 +18,14 @@ permissions:
 
 jobs:
   build:
+    name: Android 17 Debug Build
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Setup JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -25,28 +33,31 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
-        with:
-          packages: 'platform-tools'
 
-      - name: Install Android 17 SDK
+      - name: Install Android SDK packages
         run: |
-          sdkmanager "platforms;android-37" "build-tools;36.0.0"
+          sdkmanager "platform-tools"
+          sdkmanager "platforms;android-37"
+          sdkmanager "build-tools;36.0.0"
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: '9.3.1'
 
-      - name: Check Gradle
-        run: gradle --version
-
-      - name: Build with Gradle
+      - name: Check Java and Gradle
         run: |
-          gradle clean assembleRelease --stacktrace --no-daemon
+          java -version
+          gradle --version
+          sdkmanager --list_installed
 
-      - name: Upload APK
+      - name: Build Debug APK
+        run: |
+          gradle clean assembleDebug --stacktrace --no-daemon
+
+      - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: PixelIMS-Android-17
-          path: app/build/outputs/apk/release/*.apk
+          name: PixelIMS-Android17-Debug
+          path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error

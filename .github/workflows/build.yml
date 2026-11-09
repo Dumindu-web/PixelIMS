@@ -1,5 +1,5 @@
 
-name: Build PixelIMS Android 17
+name: PixelIMS Android 17 Build
 
 on:
   push:
@@ -25,7 +25,7 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Setup JDK 17
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -34,26 +34,55 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
 
-      - name: Install Android SDK packages
+      - name: Show available Android SDK packages
         run: |
-          sdkmanager "platform-tools"
-          sdkmanager "platforms;android-37"
-          sdkmanager "build-tools;36.0.0"
+          sdkmanager --list | grep -E \
+            'platforms;android-37|build-tools;37'
 
-      - name: Setup Gradle
+      - name: Install Android 17 SDK
+        run: |
+          sdkmanager --install \
+            "platform-tools" \
+            "platforms;android-37.0" \
+            "build-tools;37.0.0"
+
+      - name: Create Android 37 compatibility alias
+        run: |
+          SDK_PLATFORMS="$ANDROID_HOME/platforms"
+
+          if [ -d "$SDK_PLATFORMS/android-37.0" ]; then
+            if [ ! -e "$SDK_PLATFORMS/android-37" ]; then
+              ln -s android-37.0 \
+                "$SDK_PLATFORMS/android-37"
+            fi
+          else
+            echo "Android 37.0 SDK platform not found"
+            exit 1
+          fi
+
+          ls -la "$SDK_PLATFORMS"
+
+      - name: Accept Android SDK licenses
+        run: |
+          yes | sdkmanager --licenses || true
+
+      - name: Setup Gradle 9.3.1
         uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: '9.3.1'
 
-      - name: Check Java and Gradle
+      - name: Verify build environment
         run: |
           java -version
           gradle --version
-          sdkmanager --list_installed
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          test -f "$ANDROID_HOME/platforms/android-37/android.jar"
 
       - name: Build Debug APK
         run: |
-          gradle clean assembleDebug --stacktrace --no-daemon
+          gradle clean assembleDebug \
+            --stacktrace \
+            --no-daemon
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
@@ -61,3 +90,4 @@ jobs:
           name: PixelIMS-Android17-Debug
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+          retention-days: 7
